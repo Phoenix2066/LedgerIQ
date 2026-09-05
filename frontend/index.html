@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LedgerIQ — AI Finance Controller | Reconcile. Resolve. Forecast.</title>
+  <meta name="description" content="Autonomous multi-source reconciliation, risk-adjusted exception triaging, and 30-day cash forecasting for enterprise finance operations.">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Three.js for 3D Background -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <!-- Chart.js for 30-Day Runway Forecasting -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- ========================================================================
+       1. LANDING PAGE
+       ======================================================================== -->
+  <div id="landing-page">
+    <div id="three-canvas-container"></div>
+    
+    <button class="btn btn-outline btn-icon landing-theme-toggle theme-toggle-btn" title="Toggle Light/Dark Theme">
+      <span class="theme-icon">🌓</span>
+    </button>
+
+    <div class="landing-content">
+      <div class="landing-badge">
+        <span class="badge-dot" style="background:var(--accent-cyan); animation: pulseGlow 1.5s infinite;"></span>
+        <span>Razorpay Buildathon — Track 04</span>
+      </div>
+
+      <!-- Sequential Letter Animation Container -->
+      <div class="animated-title" id="animated-ledgeriq-title">
+        <span class="animated-letter" style="animation-delay: 0s;">L</span>
+        <span class="animated-letter" style="animation-delay: 0.08s;">e</span>
+        <span class="animated-letter" style="animation-delay: 0.16s;">d</span>
+        <span class="animated-letter" style="animation-delay: 0.24s;">g</span>
+        <span class="animated-letter" style="animation-delay: 0.32s;">e</span>
+        <span class="animated-letter" style="animation-delay: 0.40s;">r</span>
+        <span class="animated-letter" style="animation-delay: 0.48s;">I</span>
+        <span class="animated-letter" style="animation-delay: 0.56s;">Q</span>
+      </div>
+
+      <div class="landing-tagline">
+        Reconcile. <span>Resolve.</span> Forecast.
+      </div>
+
+      <p class="landing-desc">
+        Enterprise autonomous finance controller. Closes multi-source reconciliation loops across Bank feeds, Razorpay gateway settlements, and ERP invoices with real-time AI root-cause diagnostics and forward cash stress simulations.
+      </p>
+
+      <div class="landing-actions">
+        <button id="btn-enter-app" class="btn btn-primary" style="padding: 14px 28px; font-size: 1rem;">
+          <span>Enter LedgerIQ Dashboard</span>
+          <span>→</span>
+        </button>
+        <button id="btn-explore-flow" class="btn btn-secondary" style="padding: 14px 24px; font-size: 1rem;" onclick="openHowItWorksModal()">
+          <span>⚡ Explore How It Works</span>
+        </button>
+      </div>
+
+      <div style="display:flex; gap:24px; margin-top:16px; font-size:0.8125rem; color:var(--text-muted);">
+        <span>✓ 3-Tier Reconciler</span>
+        <span>✓ LLM Root-Cause Diagnostics</span>
+        <span>✓ Immutable Audit Trail</span>
+        <span>✓ 30-Day Cash Forecaster</span>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================
+       2. MAIN APPLICATION (PERSISTENT HEADER + SPA TABS)
+       ======================================================================== -->
+  <div id="main-app">
+    
+    <!-- Persistent Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-logo" onclick="showLandingPage()" title="Return to Landing Page">
+          <div class="brand-icon">⚡</div>
+          <div class="brand-name">LedgerIQ</div>
+        </div>
+
+        <nav class="nav-tabs">
+          <button class="nav-tab-btn active" data-tab="overview">
+            <span>📊</span> Overview
+          </button>
+          <button class="nav-tab-btn" data-tab="reconciliation">
+            <span>⚡</span> Reconciliation
+          </button>
+          <button class="nav-tab-btn" data-tab="exceptions">
+            <span>🚨</span> Exceptions
+          </button>
+          <button class="nav-tab-btn" data-tab="forecast">
+            <span>📈</span> Forecast & Simulator
+          </button>
+          <button class="nav-tab-btn" data-tab="audit">
+            <span>🔒</span> Audit Trail
+          </button>
+        </nav>
+      </div>
+
+      <div class="header-right">
+        <!-- Active Batch Selector -->
+        <div class="batch-selector-box" title="Active Financial Reconciliation Batch">
+          <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">BATCH:</span>
+          <select id="active-batch-select">
+            <option value="">No Batch</option>
+          </select>
+        </div>
+
+        <!-- Health Pill -->
+        <div id="system-health-pill" class="health-status-pill" title="Click to refresh system health">
+          <span class="badge-dot" style="background:#10b981;"></span>
+          <span>System Active</span>
+        </div>
+
+        <!-- Copilot Trigger -->
+        <button id="btn-open-copilot" class="btn btn-primary btn-sm">
+          <span>🤖 Open AI Copilot</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button class="btn btn-outline btn-icon theme-toggle-btn" title="Toggle Light/Dark Theme">
+          <span class="theme-icon">🌓</span>
+        </button>
+      </div>
+    </header>
+
+
+    <!-- ======================================================================
+         3. MAIN CONTENT CONTAINER
+         ====================================================================== -->
+    <main class="app-main-content">
+      
+      <!-- ── SECTION 1: OVERVIEW DASHBOARD ─────────────────────────────────── -->
+      <section id="section-overview" class="page-section active">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Executive Finance Overview</h1>
+            <p class="section-subtitle">Real-time status of multi-source reconciliation, risk matrix, and forward liquidity.</p>
+          </div>
+          <div class="section-controls">
+            <button id="btn-overview-generate" class="btn btn-secondary">
+              <span>📥 Generate & Ingest Synthetic Batch</span>
+            </button>
+            <button id="btn-overview-view-forecast" class="btn btn-outline">
+              <span>📈 View Cash Forecast</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Executive KPI Cards -->
+        <div class="kpi-grid">
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Total Ingested</span><span>📁</span></div>
+            <div id="kpi-total-records" class="kpi-value">0</div>
+            <div class="kpi-subtext">Bank, Gateway & ERP Invoices</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Matched Records</span><span>✓</span></div>
+            <div id="kpi-matched-records" class="kpi-value" style="color:var(--success);">0</div>
+            <div class="kpi-subtext">3-Tier Cascade Verified</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Match Rate</span><span>🎯</span></div>
+            <div id="kpi-match-rate" class="kpi-value" style="color:var(--primary-light);">0.0%</div>
+            <div class="progress-track">
+              <div id="overview-match-progress" class="progress-bar" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Exceptions Pool</span><span>🚨</span></div>
+            <div id="kpi-exceptions" class="kpi-value" style="color:var(--warning);">0</div>
+            <div class="kpi-subtext">Pending / Flagged Breaks</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>High Risk Breaks</span><span>🔴</span></div>
+            <div id="kpi-high-risk" class="kpi-value" style="color:var(--danger);">0</div>
+            <div class="kpi-subtext">> ₹25k or > 7 days aging</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Resolved (HITL)</span><span>⚖️</span></div>
+            <div id="kpi-resolved" class="kpi-value" style="color:var(--accent-cyan);">0</div>
+            <div class="kpi-subtext">Human Approved & Learned</div>
+          </div>
+        </div>
+
+        <!-- 2-Column Summary Grid -->
+        <div class="overview-grid-2col">
+          <!-- Reconciliation Summary -->
+          <div class="glass-panel" style="padding:24px;">
+            <h2 style="font-size:1.125rem; font-weight:700; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+              <span>3-Tier Matching Cascade Summary</span>
+              <span class="badge badge-info">Multi-Source</span>
+            </h2>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; justify-content:space-between; padding:12px; background:var(--bg-tertiary); border-radius:var(--radius-md);">
+                <div>
+                  <div style="font-weight:600;">Tier 1: Exact SQL Match</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">Ref code + Amount + Date ±1d (Confidence: 1.00)</div>
+                </div>
+                <div id="summary-tier1" style="font-weight:700; font-family:var(--font-mono); color:var(--success);">0 Records</div>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:12px; background:var(--bg-tertiary); border-radius:var(--radius-md);">
+                <div>
+                  <div style="font-weight:600;">Tier 2: One-to-Many Subset-Sum</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">1 Lump Payout = N Invoices minus 2% Fee (Confidence: 0.92)</div>
+                </div>
+                <div id="summary-tier2" style="font-weight:700; font-family:var(--font-mono); color:var(--info);">0 Records</div>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:12px; background:var(--bg-tertiary); border-radius:var(--radius-md);">
+                <div>
+                  <div style="font-weight:600;">Tier 3: RapidFuzz Multi-Attribute</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">Weighted Score ≥ 0.75 across Name, Ref & Amount</div>
+                </div>
+                <div id="summary-tier3" style="font-weight:700; font-family:var(--font-mono); color:var(--primary-light);">0 Records</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Risk & Cash Health Summary -->
+          <div class="glass-panel" style="padding:24px;">
+            <h2 style="font-size:1.125rem; font-weight:700; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+              <span>Liquidity & Risk Posture</span>
+              <span id="kpi-liquidity-health" class="badge badge-success">HEALTHY</span>
+            </h2>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+              <div style="background:var(--bg-tertiary); padding:12px; border-radius:var(--radius-md); text-align:center;">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Current Cash Balance</div>
+                <div id="kpi-current-cash" style="font-size:1.25rem; font-weight:800; font-family:var(--font-heading); color:var(--text-primary); margin-top:4px;">₹0.00</div>
+              </div>
+              <div style="background:var(--bg-tertiary); padding:12px; border-radius:var(--radius-md); text-align:center;">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">30-Day Projected Cash</div>
+                <div id="kpi-projected-cash" style="font-size:1.25rem; font-weight:800; font-family:var(--font-heading); color:var(--accent-cyan); margin-top:4px;">₹0.00</div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-tertiary); border-radius:var(--radius-md); font-size:0.8125rem; align-items:center;">
+              <span style="color:var(--text-secondary);">Days to Zero Cash Runway:</span>
+              <span id="kpi-days-to-zero" style="font-weight:700; font-family:var(--font-mono); color:var(--success);">Safe (Never)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="glass-panel" style="padding:24px;">
+          <h2 style="font-size:1.125rem; font-weight:700; margin-bottom:16px;">Recent Financial & Audit Activity</h2>
+          <div id="recent-activity-list" class="activity-list">
+            <div style="color:var(--text-muted); padding:16px; text-align:center;">No recent activity logged for this batch yet.</div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ── SECTION 2: RECONCILIATION CENTER ──────────────────────────────── -->
+      <section id="section-reconciliation" class="page-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Reconciliation Center</h1>
+            <p class="section-subtitle">Multi-source transaction ingestion, 3-tier cascade matching, and anomaly inspection.</p>
+          </div>
+          <div class="section-controls">
+            <button id="btn-generate-batch" class="btn btn-secondary">
+              <span>📥 Generate & Ingest Synthetic Batch</span>
+            </button>
+            <button id="btn-run-reconciliation" class="btn btn-primary">
+              <span>⚡ Run Reconciliation Cascade</span>
+            </button>
+            <button id="btn-refresh-summary" class="btn btn-outline">
+              <span>🔄 Refresh Metrics</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Source Summary Cards -->
+        <div class="source-cards-grid">
+          <div class="glass-panel source-card">
+            <div class="source-icon-wrap source-icon-bank">🏦</div>
+            <div>
+              <div style="font-size:0.8125rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Bank Feeds</div>
+              <div id="source-count-bank" style="font-size:1.375rem; font-weight:800;">0 Records</div>
+            </div>
+          </div>
+          <div class="glass-panel source-card">
+            <div class="source-icon-wrap source-icon-gateway">💳</div>
+            <div>
+              <div style="font-size:0.8125rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Razorpay Gateway</div>
+              <div id="source-count-gateway" style="font-size:1.375rem; font-weight:800;">0 Records</div>
+            </div>
+          </div>
+          <div class="glass-panel source-card">
+            <div class="source-icon-wrap source-icon-invoice">📄</div>
+            <div>
+              <div style="font-size:0.8125rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">ERP Invoices</div>
+              <div id="source-count-invoice" style="font-size:1.375rem; font-weight:800;">0 Records</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Reconciliation Cascade Stepper -->
+        <div class="glass-panel cascade-flow">
+          <div class="cascade-node" title="Exact SQL match on Reference + Amount + Date ±1 day">
+            <div class="badge badge-success" style="margin-bottom:6px;">Tier 1</div>
+            <div style="font-weight:700;">Exact SQL Match</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">Confidence: 1.00</div>
+          </div>
+          <div class="cascade-arrow">→</div>
+          <div class="cascade-node" title="Subset-Sum Aggregator: 1 Lump Deposit = N Invoices minus 2% Fee">
+            <div class="badge badge-info" style="margin-bottom:6px;">Tier 2</div>
+            <div style="font-weight:700;">Subset-Sum Match</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">Confidence: 0.92</div>
+          </div>
+          <div class="cascade-arrow">→</div>
+          <div class="cascade-node" title="RapidFuzz Multi-Attribute Composite Score C >= 0.75">
+            <div class="badge badge-warning" style="margin-bottom:6px;">Tier 3</div>
+            <div style="font-weight:700;">Fuzzy Match</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">Confidence: 0.75+</div>
+          </div>
+        </div>
+
+        <!-- Records Table with Filter & Search Controls -->
+        <div class="glass-panel" style="padding:24px;">
+          <div class="table-controls">
+            <div class="pill-filters">
+              <button class="pill-btn source-filter-btn active" data-source="ALL">All Sources</button>
+              <button class="pill-btn source-filter-btn" data-source="BANK">Bank Feeds</button>
+              <button class="pill-btn source-filter-btn" data-source="GATEWAY">Razorpay Gateway</button>
+              <button class="pill-btn source-filter-btn" data-source="INVOICE">ERP Invoices</button>
+            </div>
+            <div>
+              <input type="text" id="search-records-input" class="form-input" placeholder="🔍 Search records, entities, refs..." style="width:260px;">
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Entity (Raw / Normalized)</th>
+                  <th>Source</th>
+                  <th>Reference Code</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="records-table-body">
+                <tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">No records loaded. Click "Generate & Ingest Synthetic Batch" above.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ── SECTION 3: EXCEPTION WORKBENCH ────────────────────────────────── -->
+      <section id="section-exceptions" class="page-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Exception Workbench</h1>
+            <p class="section-subtitle">Triage unreconciled transactions with AI root-cause reasoning and 1-click adaptive rule synthesis.</p>
+          </div>
+          <div class="section-controls">
+            <button id="btn-diagnose-all" class="btn btn-primary">
+              <span>🤖 Diagnose All with AI</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Risk Matrix Filter Cards -->
+        <div class="exception-risk-matrix">
+          <div class="glass-panel risk-filter-card active" data-risk="ALL">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">All Exceptions</div>
+              <div id="exc-count-all" style="font-size:1.5rem; font-weight:800;">0</div>
+            </div>
+            <span class="badge badge-neutral">TOTAL</span>
+          </div>
+          <div class="glass-panel risk-filter-card" data-risk="HIGH">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">High Risk</div>
+              <div id="exc-count-high" style="font-size:1.5rem; font-weight:800; color:var(--danger);">0</div>
+            </div>
+            <span class="badge badge-danger">🔴 HIGH</span>
+          </div>
+          <div class="glass-panel risk-filter-card" data-risk="MEDIUM">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Medium Risk</div>
+              <div id="exc-count-med" style="font-size:1.5rem; font-weight:800; color:var(--warning);">0</div>
+            </div>
+            <span class="badge badge-warning">🟡 MEDIUM</span>
+          </div>
+          <div class="glass-panel risk-filter-card" data-risk="LOW">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Low Risk</div>
+              <div id="exc-count-low" style="font-size:1.5rem; font-weight:800; color:var(--success);">0</div>
+            </div>
+            <span class="badge badge-success">🟢 LOW</span>
+          </div>
+        </div>
+
+        <!-- Exception Workbench Table -->
+        <div class="glass-panel" style="padding:24px;">
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Exception ID</th>
+                  <th>Entity & Source</th>
+                  <th>Amount</th>
+                  <th>Risk Tier</th>
+                  <th>AI Root-Cause Diagnosis</th>
+                  <th>Recommended Action</th>
+                  <th>Status</th>
+                  <th>HITL Actions</th>
+                </tr>
+              </thead>
+              <tbody id="exceptions-table-body">
+                <tr><td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted);">No exceptions found. Run reconciliation first.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ── SECTION 4: FORECAST & WHAT-IF SIMULATOR ───────────────────────── -->
+      <section id="section-forecast" class="page-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">30-Day Cash Forecast & What-If Stress Simulator</h1>
+            <p class="section-subtitle">Predictive forward liquidity based on verified settled cash and risk-weighted pending receivables.</p>
+          </div>
+          <div class="section-controls">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <label for="forecast-start-date" class="form-label" style="margin:0;">Start Date:</label>
+              <input type="date" id="forecast-start-date" class="form-input" style="padding:6px 10px;">
+            </div>
+            <button id="btn-compute-forecast" class="btn btn-primary">
+              <span>Compute Baseline 30-Day Runway</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Forecast KPI Bar -->
+        <div class="kpi-grid">
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Verified Current Cash</span><span>🏦</span></div>
+            <div id="forecast-kpi-current" class="kpi-value">₹0.00</div>
+            <div class="kpi-subtext">Baseline settled funds (C0)</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Day-30 Projected</span><span>📈</span></div>
+            <div id="forecast-kpi-projected" class="kpi-value" style="color:var(--accent-cyan);">₹0.00</div>
+            <div class="kpi-subtext">Settled + Risk-Weighted Inflows</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Min Projected Cash</span><span>📉</span></div>
+            <div id="forecast-kpi-min" class="kpi-value">₹0.00</div>
+            <div class="kpi-subtext">Lowest forward dip point</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Days to Zero</span><span>⏳</span></div>
+            <div id="forecast-kpi-d2z" class="kpi-value" style="color:var(--success);">Safe (Never)</div>
+            <div class="kpi-subtext">Liquidity runway buffer</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Liquidity Posture</span><span>🛡️</span></div>
+            <div>
+              <span id="forecast-kpi-health" class="badge badge-success" style="font-size:1rem; padding:6px 14px;">HEALTHY</span>
+            </div>
+            <div class="kpi-subtext">Risk rating algorithm</div>
+          </div>
+        </div>
+
+        <!-- Forecast Chart & Simulator Grid -->
+        <div class="forecast-layout">
+          <!-- 30-Day Runway Chart -->
+          <div class="glass-panel chart-container-card">
+            <h2 style="font-size:1.125rem; font-weight:700;">Forward 30-Day Cash Trajectory</h2>
+            <div class="chart-wrapper">
+              <canvas id="cash-runway-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- What-If Stress Simulator Controls -->
+          <div class="glass-panel simulator-card">
+            <div>
+              <h2 style="font-size:1.125rem; font-weight:700;">What-If Stress Simulator</h2>
+              <p style="font-size:0.8125rem; color:var(--text-secondary); margin-top:2px;">
+                Simulate collection delays, counterparty defaults, and payment gateway fee spikes.
+              </p>
+            </div>
+
+            <!-- Slider 1: Receivables Collection Delay -->
+            <div class="slider-container">
+              <div class="slider-header">
+                <span class="form-label">Receivables Collection Delay</span>
+                <span id="sim-delay-val" class="badge badge-neutral" style="font-family:var(--font-mono);">0 Days</span>
+              </div>
+              <input type="range" id="sim-delay-slider" class="range-slider" min="0" max="30" value="0">
+            </div>
+
+            <!-- Slider 2: Customer Default / Loss Rate -->
+            <div class="slider-container">
+              <div class="slider-header">
+                <span class="form-label">Customer Default / Loss Rate</span>
+                <span id="sim-default-val" class="badge badge-neutral" style="font-family:var(--font-mono);">0%</span>
+              </div>
+              <input type="range" id="sim-default-slider" class="range-slider" min="0" max="50" value="0">
+            </div>
+
+            <!-- Slider 3: Gateway Fee Surge -->
+            <div class="slider-container">
+              <div class="slider-header">
+                <span class="form-label">Gateway Fee Surge</span>
+                <span id="sim-fee-val" class="badge badge-neutral" style="font-family:var(--font-mono);">0%</span>
+              </div>
+              <input type="range" id="sim-fee-slider" class="range-slider" min="0" max="5" step="0.5" value="0">
+            </div>
+
+            <!-- Simulation Action Buttons -->
+            <div style="display:flex; gap:10px; margin-top:8px;">
+              <button id="btn-run-simulation" class="btn btn-primary" style="flex:1;">
+                <span>⚡ Run Stress Simulation</span>
+              </button>
+              <button id="btn-reset-simulation" class="btn btn-outline">
+                <span>Reset</span>
+              </button>
+            </div>
+
+            <!-- Stress Delta Results -->
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; margin-bottom:6px;">Simulation Impact Analysis:</div>
+              <div class="sim-delta-grid">
+                <div class="sim-delta-box">
+                  <div style="font-size:0.75rem; color:var(--text-muted);">Net Cash Variance</div>
+                  <div id="sim-delta-variance" style="font-weight:700; color:var(--danger); font-family:var(--font-mono); margin-top:2px;">₹0.00</div>
+                </div>
+                <div class="sim-delta-box">
+                  <div style="font-size:0.75rem; color:var(--text-muted);">Minimum Stressed Cash</div>
+                  <div id="sim-delta-min" style="font-weight:700; font-family:var(--font-mono); margin-top:2px;">—</div>
+                </div>
+              </div>
+              <div id="sim-scenario-insight" style="background:var(--bg-tertiary); padding:10px 14px; border-radius:var(--radius-md); font-size:0.8125rem; color:var(--text-secondary); margin-top:10px; line-height:1.4;">
+                Adjust the sliders above to stress-test collection delays, defaults, and fee surges.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ── SECTION 5: IMMUTABLE AUDIT TRAIL ──────────────────────────────── -->
+      <section id="section-audit" class="page-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Immutable Audit Trail</h1>
+            <p class="section-subtitle">Tamper-proof chronological log of all AI automated matches, human resolutions, and dynamic rule syntheses.</p>
+          </div>
+          <div class="section-controls">
+            <button id="btn-load-audit" class="btn btn-secondary">
+              <span>🔄 Load Audit Trail</span>
+            </button>
+            <button id="btn-export-audit-json" class="btn btn-outline">
+              <span>Export Audit Package (JSON)</span>
+            </button>
+            <button id="btn-export-audit-csv" class="btn btn-outline">
+              <span>Export Audit Package (CSV)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Audit KPI Counters -->
+        <div class="kpi-grid">
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Total Audit Events</span><span>🔒</span></div>
+            <div id="audit-kpi-total" class="kpi-value">0</div>
+            <div class="kpi-subtext">Append-Only Immutability</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>System Automated Actions</span><span>⚙️</span></div>
+            <div id="audit-kpi-system" class="kpi-value" style="color:var(--info);">0</div>
+            <div class="kpi-subtext">Reconciler matches & flags</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>Human Actions (HITL)</span><span>👤</span></div>
+            <div id="audit-kpi-human" class="kpi-value" style="color:var(--accent-cyan);">0</div>
+            <div class="kpi-subtext">Controller approvals & overrides</div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-title"><span>AI Agent Diagnoses</span><span>🤖</span></div>
+            <div id="audit-kpi-ai" class="kpi-value" style="color:var(--primary-light);">0</div>
+            <div class="kpi-subtext">LLM reasoning snapshots</div>
+          </div>
+        </div>
+
+        <!-- Audit Filter Controls & Table -->
+        <div class="glass-panel" style="padding:24px;">
+          <div class="table-controls">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <label for="audit-action-filter" class="form-label" style="margin:0;">Filter Action:</label>
+              <select id="audit-action-filter" class="form-select">
+                <option value="ALL">All Event Types</option>
+                <option value="AUTO_MATCH">AUTO_MATCH</option>
+                <option value="EXCEPTION_FLAGGED">EXCEPTION_FLAGGED</option>
+                <option value="EXCEPTION_DIAGNOSED">EXCEPTION_DIAGNOSED</option>
+                <option value="HUMAN_APPROVED">HUMAN_APPROVED</option>
+                <option value="HUMAN_REJECTED">HUMAN_REJECTED</option>
+                <option value="RULE_SYNTHESIZED">RULE_SYNTHESIZED</option>
+                <option value="FORECAST_GENERATED">FORECAST_GENERATED</option>
+                <option value="SIMULATION_RUN">SIMULATION_RUN</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action Category</th>
+                  <th>Actor Attribution</th>
+                  <th>Confidence</th>
+                  <th>Reasoning Snapshot</th>
+                  <th>Forensics</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body">
+                <tr><td colspan="6" style="text-align:center; padding:32px; color:var(--text-muted);">No audit events loaded.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+
+  <!-- ========================================================================
+       8. PERSISTENT COPILOT DRAWER
+       ======================================================================== -->
+  <aside id="copilot-drawer">
+    <div class="copilot-header">
+      <div class="copilot-title-box">
+        <div class="copilot-icon">🤖</div>
+        <div>
+          <h3 style="font-size:1.0625rem; font-weight:700;">LedgerIQ Copilot</h3>
+          <div style="font-size:0.75rem; color:var(--text-muted);">
+            Your AI Finance Controller • Batch <span id="copilot-active-batch-badge" style="font-family:var(--font-mono); color:var(--accent-cyan);">None</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button id="btn-clear-chat" class="btn btn-outline btn-sm" title="Clear Chat History">🗑️</button>
+        <button id="btn-close-copilot" class="btn btn-outline btn-sm" title="Close AI Copilot">✕</button>
+      </div>
+    </div>
+
+    <div id="copilot-messages" class="copilot-messages">
+      <div class="chat-bubble chat-bubble-ai">
+        <strong>Hello, I'm LedgerIQ Copilot.</strong><br>
+        I have full real-time awareness of the current financial batch. Ask me about reconciliation anomalies, missing invoices, fee discrepancies, or forward cash runway projections.
+      </div>
+    </div>
+
+    <!-- Quick Prompt Chips -->
+    <div class="copilot-chips">
+      <button class="chip-btn" data-prompt="Which vendor caused the largest fee discrepancy in this batch?">Show Top Fee Discrepancies</button>
+      <button class="chip-btn" data-prompt="Why did ACME Tech fail reconciliation and what is the root cause?">Why Did ACME Tech Fail?</button>
+      <button class="chip-btn" data-prompt="What is our projected cash balance on Day 15 and are we in danger of insolvency?">What Is Our Day 15 Cash Balance?</button>
+      <button class="chip-btn" data-prompt="List all HIGH risk items in this batch and recommend immediate actions.">List All HIGH Risk Items</button>
+    </div>
+
+    <div class="copilot-input-area">
+      <input type="text" id="copilot-input" class="copilot-input" placeholder="Ask about this batch..." autocomplete="off">
+      <button id="btn-send-copilot" class="btn btn-primary btn-sm">
+        <span>Send</span>
+      </button>
+    </div>
+  </aside>
+
+
+  <!-- ========================================================================
+       9. MODALS & DRAWERS
+       ======================================================================== -->
+
+  <!-- How It Works Modal -->
+  <div id="how-it-works-modal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size:1.125rem; font-weight:700;">How LedgerIQ Works</h3>
+        <button class="btn btn-outline btn-sm modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div class="badge badge-info" style="font-size:0.875rem;">1</div>
+          <div>
+            <strong>Ingest & Normalize:</strong>
+            <p style="font-size:0.8125rem; color:var(--text-secondary); margin-top:2px;">
+              Ingests multi-source data feeds (Bank, Gateway, Invoices) and cleans messy merchant names via local Ollama LLM.
+            </p>
+          </div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div class="badge badge-success" style="font-size:0.875rem;">2</div>
+          <div>
+            <strong>Reconcile (3-Tier Cascade):</strong>
+            <p style="font-size:0.8125rem; color:var(--text-secondary); margin-top:2px;">
+              Executes Exact SQL → Subset-Sum (1 Lump = N Invoices minus fee) → RapidFuzz Semantic Matching.
+            </p>
+          </div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div class="badge badge-danger" style="font-size:0.875rem;">3</div>
+          <div>
+            <strong>Detect & Resolve Exceptions:</strong>
+            <p style="font-size:0.8125rem; color:var(--text-secondary); margin-top:2px;">
+              Triage risk (HIGH/MEDIUM/LOW), drafts double-entry accounting adjustments via LLM diagnostic agent, and learns adaptive rules upon human approval.
+            </p>
+          </div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div class="badge badge-warning" style="font-size:0.875rem;">4</div>
+          <div>
+            <strong>Forecast Cash & Stress Test:</strong>
+            <p style="font-size:0.8125rem; color:var(--text-secondary); margin-top:2px;">
+              Projects 30-day runway using settled cash + risk-adjusted receivables, and simulates collection delays or fee surges.
+            </p>
+          </div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div class="badge badge-neutral" style="font-size:0.875rem;">5</div>
+          <div>
+            <strong>Immutable Audit Trail:</strong>
+            <p style="font-size:0.8125rem; color:var(--text-secondary); margin-top:2px;">
+              Every automated match, diagnosis, and human resolution is permanently written to an append-only audit log for regulatory compliance.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary modal-close-btn">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Raw Metadata Modal -->
+  <div id="record-metadata-modal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size:1.125rem; font-weight:700;">Record Metadata & Anomaly Payload</h3>
+        <button class="btn btn-outline btn-sm modal-close-btn">✕</button>
+      </div>
+      <div id="record-metadata-content" class="modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Journal Entry Modal -->
+  <div id="journal-entry-modal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size:1.125rem; font-weight:700;">AI Drafted Journal Entry</h3>
+        <button class="btn btn-outline btn-sm modal-close-btn">✕</button>
+      </div>
+      <div id="journal-entry-content" class="modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit Diff Modal -->
+  <div id="audit-diff-modal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size:1.125rem; font-weight:700;">Audit State Diff & Reasoning</h3>
+        <button class="btn btn-outline btn-sm modal-close-btn">✕</button>
+      </div>
+      <div id="audit-diff-content" class="modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Application Scripts -->
+  <script src="js/three-bg.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
