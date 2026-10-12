@@ -20,13 +20,20 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import ExceptionItem, FinancialRecord
-from app.schemas.forecast import ForecastDataPoint, RunwayDelta, SimulationOut, SimulationRequest
+from app.schemas.forecast import (
+    ForecastDataPoint,
+    RunwayDelta,
+    SimulationDeltaSummary,
+    SimulationOut,
+    SimulationRequest,
+)
 from app.services.cash_forecaster import (
     FORECAST_DAYS,
     _RecordSnapshot,
     _compute_liquidity_metrics,
     _project,
 )
+from app.neatlogs import neatlogs
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +125,36 @@ async def run_simulation(
         max_negative_impact_day = None
         max_negative_impact_amount = 0.0
 
+    # ── UI-facing impact summary ─────────────────────────────────────────────
+    sim_balances = [p.projected_balance for p in simulated]
+    min_cash = round(min(sim_balances), 2) if sim_balances else 0.0
+    sim_days_to_zero: Optional[int] = None
+    for i, p in enumerate(simulated):
+        if p.projected_balance <= 0:
+            sim_days_to_zero = i
+            break
+    net_cash_variance = round(deltas[-1].delta, 2) if deltas else 0.0
+
+    delta_summary = SimulationDeltaSummary(
+        net_cash_variance=net_cash_variance,
+        min_cash=min_cash,
+        days_to_zero=sim_days_to_zero,
+        summary=summary,
+    )
+
+    neatlogs.ai(
+        "What-if simulation: "
+        + summary,
+        {
+            "batch_id": str(request.batch_id),
+            "delay_days": request.delay_days,
+            "default_rate": request.default_rate,
+            "gateway_fee_surge": request.gateway_fee_surge,
+            "min_cash": min_cash,
+            "net_cash_variance": net_cash_variance,
+        },
+    )
+
     return SimulationOut(
         batch_id=request.batch_id,
         parameters=request,
@@ -127,4 +164,7 @@ async def run_simulation(
         summary=summary,
         max_negative_impact_day=max_negative_impact_day,
         max_negative_impact_amount=round(max_negative_impact_amount, 2),
+        time_series=simulated,
+        delta=delta_summary,
+        simulated_summary=delta_summary,
     )

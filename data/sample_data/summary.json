@@ -1,0 +1,11 @@
+{
+  "dataset_name": "CFO.AI Real-World Finance Sample Dataset",
+  "description": "Multi-source financial feeds featuring Bank statement deposits, Razorpay gateway settlements with fee deductions, and ERP customer sales invoices.",
+  "total_records": 12,
+  "sources": {
+    "bank_statements": 5,
+    "gateway_settlements": 3,
+    "erp_invoices": 4
+  },
+  "created_at": "2026-10-10T23:45:00Z"
+}

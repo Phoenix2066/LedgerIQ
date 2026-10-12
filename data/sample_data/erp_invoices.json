@@ -1,0 +1,50 @@
+[
+  {
+    "raw_entity_name": "Infosys Technologies Limited",
+    "amount": 128500.00,
+    "reference_code": "INV-INF-2026-004",
+    "transaction_date": "2026-10-09",
+    "metadata": {
+      "erp_system": "Zoho Books",
+      "customer_gstin": "29AAACI1681G1ZD",
+      "payment_terms": "NET30",
+      "status": "PAID"
+    }
+  },
+  {
+    "raw_entity_name": "Tata Consultancy Services Ltd",
+    "amount": 89200.00,
+    "reference_code": "INV-TCS-2026-012",
+    "transaction_date": "2026-10-08",
+    "metadata": {
+      "erp_system": "Tally Prime",
+      "customer_gstin": "27AAACT2727Q1ZW",
+      "payment_terms": "IMMEDIATE",
+      "status": "PAID"
+    }
+  },
+  {
+    "raw_entity_name": "Acme Corp India Private Limited",
+    "amount": 34100.00,
+    "reference_code": "ACM-88912-A",
+    "transaction_date": "2026-10-06",
+    "metadata": {
+      "erp_system": "SAP S/4HANA",
+      "customer_gstin": "07AAAAA0000A1Z5",
+      "payment_terms": "NET15",
+      "status": "PAID"
+    }
+  },
+  {
+    "raw_entity_name": "Wipro Tech Solutions",
+    "amount": 67400.00,
+    "reference_code": "INV-WIP-9011",
+    "transaction_date": "2026-10-04",
+    "metadata": {
+      "erp_system": "Zoho Books",
+      "customer_gstin": "29AAACW0000A1Z1",
+      "payment_terms": "NET30",
+      "status": "OVERDUE"
+    }
+  }
+]

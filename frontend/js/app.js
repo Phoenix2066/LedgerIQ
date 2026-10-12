@@ -190,6 +190,26 @@ const API = {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}: Copilot failed`);
     return await res.json();
+  },
+
+  async loadSampleData() {
+    const res = await fetch(`${API_BASE}/api/batch/load-sample-data`, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load sample data`);
+    return await res.json();
+  },
+
+  async getNeatLogs(limit = 200, category = null) {
+    let url = `${API_BASE}/api/neatlogs?limit=${limit}`;
+    if (category && category !== 'ALL') url += `&category=${category}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch NeatLogs`);
+    return await res.json();
+  },
+
+  async clearNeatLogs() {
+    const res = await fetch(`${API_BASE}/api/neatlogs/clear`, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to clear NeatLogs`);
+    return await res.json();
   }
 };
 
@@ -239,12 +259,111 @@ function switchTab(tabName) {
   });
 
   // Load specific data on tab enter
-  if (AppState.activeBatchId) {
+  if (tabName === 'neatlogs') {
+    loadNeatLogs();
+  } else if (AppState.activeBatchId) {
     if (tabName === 'overview') refreshOverview();
     if (tabName === 'reconciliation') loadReconciliationData();
     if (tabName === 'exceptions') loadExceptionsData();
     if (tabName === 'forecast') loadForecastData();
     if (tabName === 'audit') loadAuditData();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// NeatLogs Log Stream Functions
+// ---------------------------------------------------------------------------
+async function loadNeatLogs() {
+  const container = document.getElementById('neatlogs-console-body');
+  if (!container) return;
+
+  const categoryFilter = document.getElementById('neatlogs-category-filter')?.value || 'ALL';
+  const searchInput = document.getElementById('neatlogs-search-input')?.value?.toLowerCase() || '';
+
+  try {
+    const logs = await API.getNeatLogs(300, categoryFilter);
+    let filtered = logs;
+    if (searchInput) {
+      filtered = logs.filter(l => 
+        (l.message && l.message.toLowerCase().includes(searchInput)) ||
+        (l.category && l.category.toLowerCase().includes(searchInput)) ||
+        (l.level && l.level.toLowerCase().includes(searchInput))
+      );
+    }
+
+    if (!filtered || filtered.length === 0) {
+      container.innerHTML = `<div style="color:var(--text-muted); padding:16px;">No NeatLogs matching current filter criteria.</div>`;
+      return;
+    }
+
+    const html = filtered.map(log => {
+      let levelColor = '#38bdf8';
+      if (log.level === 'SUCCESS') levelColor = '#34d399';
+      if (log.level === 'WARN') levelColor = '#fbbf24';
+      if (log.level === 'ERROR') levelColor = '#f87171';
+      if (log.level === 'AI_DECISION') levelColor = '#c084fc';
+      if (log.level === 'RECON') levelColor = '#60a5fa';
+      if (log.level === 'AUDIT') levelColor = '#a7f3d0';
+
+      const timeStr = log.timestamp ? log.timestamp.substring(11, 19) : '';
+      return `<div style="margin-bottom:6px; line-height:1.4;">
+        <span style="color:#6e7681;">[${timeStr}]</span>
+        <span style="color:${levelColor}; font-weight:600; margin:0 6px;">[${log.level}]</span>
+        <span style="color:#a5d6ff; margin-right:8px;">[${log.category}]</span>
+        <span>${log.message}</span>
+      </div>`;
+    }).join('');
+
+    // Update Ticker Preview on Overview dashboard
+    const tickerContainer = document.getElementById('neatlogs-ticker-content');
+    if (tickerContainer && logs.length > 0) {
+      const recent = logs.slice(-3);
+      tickerContainer.innerHTML = recent.map(log => {
+        const timeStr = log.timestamp ? log.timestamp.substring(11, 19) : '';
+        return `<div><span style="color:#64748b;">[${timeStr}]</span> <span style="color:#38bdf8;">[${log.category}]</span> ${log.message}</div>`;
+      }).join('');
+    }
+
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
+  } catch (err) {
+    container.innerHTML = `<div style="color:#f87171;">Failed to load NeatLogs stream: ${err.message}</div>`;
+  }
+}
+
+async function handleClearNeatLogs() {
+  try {
+    await API.clearNeatLogs();
+    showToast('NeatLogs stream cleared', 'info');
+    await loadNeatLogs();
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sample Data Ingestion Handler
+// ---------------------------------------------------------------------------
+async function handleLoadSampleData() {
+  const btn = document.getElementById('btn-overview-load-sample');
+  if (btn) btn.disabled = true;
+  showToast('Loading pre-packaged CFO.AI sample dataset...', 'info');
+
+  try {
+    const res = await API.loadSampleData();
+    AppState.activeBatchId = res.batch_id;
+    localStorage.setItem('ledgeriq_batch_id', res.batch_id);
+
+    showToast(`Sample Data Loaded! Ingested ${res.total_records} records (${res.bank_count} Bank, ${res.gateway_count} Gateway, ${res.invoice_count} Invoices)`, 'success');
+
+    updateBatchSelector();
+    await refreshOverview();
+    if (AppState.currentTab === 'reconciliation') await loadReconciliationData();
+    if (AppState.currentTab === 'neatlogs') await loadNeatLogs();
+  } catch (err) {
+    showToast(err.message, 'danger');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -399,8 +518,17 @@ async function refreshOverview() {
       }
     }
 
+    // Agent metric state cards updates
+    setText('agent-metric-ingest', `Ingested: ${summary.total_records || 0} Records`);
+    setText('agent-metric-recon', `Match Rate: ${summary.match_rate || 0}% (${summary.matched_count || 0} matched)`);
+    setText('agent-metric-diag', `Exceptions: ${summary.exception_count || 0} (${summary.risk_breakdown?.high || 0} High Risk)`);
+    setText('agent-metric-audit', `Resolved HITL: ${summary.resolved_count || 0}`);
+
     // Recent Activity Feed
     loadRecentActivityFeed();
+
+    // Refresh NeatLogs Ticker
+    await loadNeatLogs();
   } catch (err) {
     console.error('Failed to refresh overview:', err);
   }
@@ -1179,9 +1307,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Ingestion / Batch Controls
   document.getElementById('btn-generate-batch')?.addEventListener('click', handleGenerateBatch);
   document.getElementById('btn-overview-generate')?.addEventListener('click', handleGenerateBatch);
+  document.getElementById('btn-overview-load-sample')?.addEventListener('click', handleLoadSampleData);
   document.getElementById('btn-run-reconciliation')?.addEventListener('click', handleRunReconciliation);
   document.getElementById('btn-refresh-summary')?.addEventListener('click', refreshOverview);
   document.getElementById('btn-overview-view-forecast')?.addEventListener('click', () => switchTab('forecast'));
+
+  // NeatLogs Telemetry Stream Controls
+  document.getElementById('btn-neatlogs-refresh')?.addEventListener('click', loadNeatLogs);
+  document.getElementById('btn-neatlogs-clear')?.addEventListener('click', handleClearNeatLogs);
+  document.getElementById('neatlogs-search-input')?.addEventListener('input', loadNeatLogs);
+  document.getElementById('neatlogs-category-filter')?.addEventListener('change', loadNeatLogs);
 
   // Source Filters on Reconciliation Center
   document.querySelectorAll('.source-filter-btn').forEach(btn => {

@@ -29,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import ExceptionItem, FinancialRecord, RecordMatch, ReconciliationBatch
 from app.schemas.forecast import ForecastDataPoint, LiquidityRiskMetric, RunwayOut
+from app.neatlogs import neatlogs
 
 logger = logging.getLogger(__name__)
 
@@ -168,6 +169,14 @@ def _compute_liquidity_metrics(
     total_at_risk = round(high_risk + medium_risk + low_risk, 2)
     total_settled = round(sum(p.settled_cash for p in projection[-1:]), 2)
 
+    # Risk posture rating (UI-facing)
+    if days_to_zero is not None or min_balance <= 0:
+        risk_level = "CRITICAL"
+    elif total_at_risk > 0 and min_balance < total_at_risk:
+        risk_level = "CAUTION"
+    else:
+        risk_level = "HEALTHY"
+
     return LiquidityRiskMetric(
         days_to_zero=days_to_zero,
         minimum_balance=round(min_balance, 2),
@@ -177,6 +186,8 @@ def _compute_liquidity_metrics(
         high_risk_exposure=round(high_risk, 2),
         medium_risk_exposure=round(medium_risk, 2),
         low_risk_exposure=round(low_risk, 2),
+        min_projected_balance=round(min_balance, 2),
+        risk_level=risk_level,
     )
 
 
@@ -220,10 +231,18 @@ async def compute_runway(
     projection = _project(snapshots, start_date)
     liquidity = _compute_liquidity_metrics(projection, snapshots)
 
+    neatlogs.ai(
+        f"30-day runway forecast: C0=₹{c0:,.2f}, min=₹{liquidity.minimum_balance:,.2f}, "
+        f"days_to_zero={liquidity.days_to_zero if liquidity.days_to_zero is not None else 'never'} "
+        f"({liquidity.risk_level}).",
+        {"batch_id": str(batch_id), "risk_level": liquidity.risk_level},
+    )
+
     return RunwayOut(
         batch_id=batch_id,
         baseline_cash=c0,
         forecast_horizon_days=FORECAST_DAYS,
         projection=projection,
         liquidity_risk=liquidity,
+        daily_projection=projection,
     )

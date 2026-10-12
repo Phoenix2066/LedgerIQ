@@ -1,0 +1,41 @@
+[
+  {
+    "raw_entity_name": "Razorpay Payout #RPR-20261010-09812",
+    "amount": 250000.00,
+    "reference_code": "RPR-20261010-09812",
+    "transaction_date": "2026-10-10",
+    "metadata": {
+      "gross_amount": 250000.00,
+      "gateway_fee": 5000.00,
+      "net_payout": 245000.00,
+      "fee_percentage": 2.0,
+      "status": "SETTLED"
+    }
+  },
+  {
+    "raw_entity_name": "Razorpay Settlement Batch #RPR-20261007-44109",
+    "amount": 500000.00,
+    "reference_code": "RPR-20261007-44109",
+    "transaction_date": "2026-10-07",
+    "metadata": {
+      "gross_amount": 500000.00,
+      "gateway_fee": 8000.00,
+      "net_payout": 492000.00,
+      "fee_percentage": 1.6,
+      "status": "SETTLED"
+    }
+  },
+  {
+    "raw_entity_name": "Razorpay Refund Reversal #RPR-REF-1002",
+    "amount": -15000.00,
+    "reference_code": "RPR-REF-1002",
+    "transaction_date": "2026-10-05",
+    "metadata": {
+      "gross_amount": -15000.00,
+      "gateway_fee": 0.00,
+      "net_payout": -15000.00,
+      "reason": "Customer Dispute Refund",
+      "status": "PROCESSED"
+    }
+  }
+]

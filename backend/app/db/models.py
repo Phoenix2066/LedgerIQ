@@ -10,9 +10,10 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    Uuid,
+    JSON,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -32,7 +33,7 @@ class ReconciliationBatch(Base):
     __tablename__ = "reconciliation_batches"
 
     batch_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     total_records: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     matched_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -65,10 +66,10 @@ class FinancialRecord(Base):
     __tablename__ = "financial_records"
 
     record_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     batch_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("reconciliation_batches.batch_id", ondelete="CASCADE"),
         nullable=False,
     )
@@ -83,7 +84,7 @@ class FinancialRecord(Base):
     status: Mapped[str] = mapped_column(
         String(20), default="UNMATCHED", nullable=False
     )  # 'MATCHED' | 'EXCEPTION' | 'UNMATCHED' | 'RESOLVED'
-    metadata_json: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    metadata_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     batch: Mapped["ReconciliationBatch"] = relationship(
@@ -115,20 +116,20 @@ class RecordMatch(Base):
     __tablename__ = "record_matches"
 
     match_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     batch_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("reconciliation_batches.batch_id", ondelete="CASCADE"),
         nullable=False,
     )
     record_a_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("financial_records.record_id", ondelete="CASCADE"),
         nullable=False,
     )
     record_b_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("financial_records.record_id", ondelete="CASCADE"),
         nullable=False,
     )
@@ -164,15 +165,15 @@ class ExceptionItem(Base):
     __tablename__ = "exceptions"
 
     exception_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     batch_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("reconciliation_batches.batch_id", ondelete="CASCADE"),
         nullable=False,
     )
     record_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("financial_records.record_id", ondelete="CASCADE"),
         nullable=False,
     )
@@ -181,7 +182,7 @@ class ExceptionItem(Base):
     )  # 'HIGH' | 'MEDIUM' | 'LOW'
     ai_diagnosis: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     recommended_action: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    drafted_journal_entry: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    drafted_journal_entry: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), default="PENDING", nullable=False
     )  # 'PENDING' | 'APPROVED' | 'REJECTED'
@@ -200,65 +201,46 @@ class ExceptionItem(Base):
 
 
 # ---------------------------------------------------------------------------
-# 5. DynamicRule  (Phase 3 — Adaptive Rule Synthesis)
+# 5. DynamicRule
 # ---------------------------------------------------------------------------
 class DynamicRule(Base):
-    """
-    Adaptive matching rules synthesised from human-approved exceptions.
-
-    rule_type values:
-      REGEX_STRIP  — strip a noise prefix/suffix from raw_entity_name
-      VENDOR_MAP   — map a raw entity alias to its canonical normalized name
-      FEE_TOLERANCE — override the gateway fee tolerance band for a vendor
-    """
+    """Adaptive matching rules synthesised from human-approved exceptions."""
 
     __tablename__ = "dynamic_rules"
 
     rule_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     rule_name: Mapped[str] = mapped_column(String(100), nullable=False)
     rule_type: Mapped[str] = mapped_column(
         String(50), nullable=False
     )  # 'REGEX_STRIP' | 'VENDOR_MAP' | 'FEE_TOLERANCE'
     pattern: Mapped[str] = mapped_column(Text, nullable=False)
-    action_payload: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    action_payload: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
+
 # ---------------------------------------------------------------------------
-# 6. AuditLog  (Phase 4 — Append-Only Tamper-Proof Audit Trail)
+# 6. AuditLog
 # ---------------------------------------------------------------------------
 class AuditLog(Base):
-    """
-    Immutable append-only audit trail. Never updated, never deleted.
-
-    action_type values:
-      AUTO_MATCH          — Tier 1/2/3 reconciler made a match
-      EXCEPTION_FLAGGED   — record placed in exception pool after triage
-      EXCEPTION_DIAGNOSED — LLM or heuristic diagnosis attached
-      HUMAN_APPROVED      — human controller approved an exception
-      HUMAN_REJECTED      — human controller rejected an exception
-      RULE_SYNTHESIZED    — adaptive DynamicRule created from approval
-      RULE_APPLIED        — DynamicRule applied during pre-Tier-1 hook
-      FORECAST_GENERATED  — cash runway forecast computed
-      SIMULATION_RUN      — what-if scenario simulation executed
-    """
+    """Immutable append-only audit trail."""
 
     __tablename__ = "audit_logs"
 
     audit_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     batch_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("reconciliation_batches.batch_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     record_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("financial_records.record_id", ondelete="SET NULL"),
         nullable=True,
         index=True,
@@ -269,7 +251,7 @@ class AuditLog(Base):
         Numeric(5, 4), nullable=True
     )
     reasoning_snapshot: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    changes_payload: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    changes_payload: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )

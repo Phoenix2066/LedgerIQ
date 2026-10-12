@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db.models import ExceptionItem, FinancialRecord, ReconciliationBatch
+from app.neatlogs import neatlogs
 from app.schemas.copilot import CopilotResponse, CopilotSource
 
 logger = logging.getLogger(__name__)
@@ -225,5 +226,21 @@ async def chat(
 
     # Filter sources to those most relevant (limit to 10 for response size)
     relevant_sources = sources[:10]
+    for source in relevant_sources:
+        source.identifier = source.identifier or source.id
 
-    return CopilotResponse(reply=reply, sources=relevant_sources, llm_used=llm_used)
+    neatlogs.ai(
+        "Copilot answered a finance query.",
+        {
+            "batch_id": str(batch_id),
+            "llm_used": llm_used,
+            "model": settings.KIMI_MODEL if llm_used else "fallback",
+        },
+    )
+
+    return CopilotResponse(
+        reply=reply,
+        sources=relevant_sources,
+        llm_used=llm_used,
+        model=settings.KIMI_MODEL if llm_used else "heuristic-fallback",
+    )

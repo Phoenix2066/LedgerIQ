@@ -1,0 +1,57 @@
+[
+  {
+    "raw_entity_name": "RAZORPAY PAYOUT SEAMLESS AG",
+    "amount": 245000.00,
+    "reference_code": "RPR-20261010-09812",
+    "transaction_date": "2026-10-10",
+    "metadata": {
+      "bank_name": "HDFC Bank",
+      "account_no": "XXXX-XXXX-9012",
+      "mode": "NEFT"
+    }
+  },
+  {
+    "raw_entity_name": "INFOSYS TECH PVT LTD",
+    "amount": 128500.00,
+    "reference_code": "INV-INF-2026-004",
+    "transaction_date": "2026-10-09",
+    "metadata": {
+      "bank_name": "ICICI Bank",
+      "account_no": "XXXX-XXXX-4511",
+      "mode": "RTGS"
+    }
+  },
+  {
+    "raw_entity_name": "TATA CONSULTANCY SERVICES",
+    "amount": 89200.00,
+    "reference_code": "INV-TCS-2026-012",
+    "transaction_date": "2026-10-08",
+    "metadata": {
+      "bank_name": "Axis Bank",
+      "account_no": "XXXX-XXXX-3382",
+      "mode": "IMPS"
+    }
+  },
+  {
+    "raw_entity_name": "RAZORPAY SOFTWARE SETTLEMENT",
+    "amount": 492000.00,
+    "reference_code": "RPR-20261007-44109",
+    "transaction_date": "2026-10-07",
+    "metadata": {
+      "bank_name": "HDFC Bank",
+      "account_no": "XXXX-XXXX-9012",
+      "mode": "NEFT"
+    }
+  },
+  {
+    "raw_entity_name": "ACME CORP INDIA LTD",
+    "amount": 34100.00,
+    "reference_code": "ACM-88912-A",
+    "transaction_date": "2026-10-06",
+    "metadata": {
+      "bank_name": "ICICI Bank",
+      "account_no": "XXXX-XXXX-4511",
+      "mode": "UPI"
+    }
+  }
+]

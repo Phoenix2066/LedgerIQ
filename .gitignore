@@ -1,0 +1,6 @@
+backend/.env
+
+**/.venv/
+**/win_venv/
+
+**/__pycache__/

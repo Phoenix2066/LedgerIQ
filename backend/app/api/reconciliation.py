@@ -28,6 +28,7 @@ from app.schemas.reconciliation import (
     ReconciliationRunOut,
     ReconciliationSummaryOut,
     RiskBreakdown,
+    TierBreakdown,
 )
 from app.services.audit_logger import AuditLogger
 from app.services.reconciler import ReconciliationEngine, _Match
@@ -272,6 +273,23 @@ async def get_summary(
     )
     risk_rows = {row[0]: row[1] for row in risk_result.all()}
 
+    # Tier cascade breakdown from record_matches
+    tier_result = await db.execute(
+        select(RecordMatch.match_type, func.count())
+        .where(RecordMatch.batch_id == batch_id)
+        .group_by(RecordMatch.match_type)
+    )
+    tier_rows = {row[0]: row[1] for row in tier_result.all()}
+
+    # Resolved (human-in-the-loop) exceptions: anything no longer PENDING
+    resolved_result = await db.execute(
+        select(func.count()).select_from(ExceptionItem).where(
+            ExceptionItem.batch_id == batch_id,
+            ExceptionItem.status != "PENDING",
+        )
+    )
+    resolved_count = resolved_result.scalar_one()
+
     unmatched = (
         batch.total_records - batch.matched_count - batch.exception_count
     )
@@ -287,6 +305,12 @@ async def get_summary(
             high=risk_rows.get("HIGH", 0),
             medium=risk_rows.get("MEDIUM", 0),
             low=risk_rows.get("LOW", 0),
+        ),
+        resolved_count=resolved_count,
+        tier_breakdown=TierBreakdown(
+            tier1_exact=tier_rows.get("EXACT", 0),
+            tier2_one_to_many=tier_rows.get("ONE_TO_MANY", 0),
+            tier3_fuzzy=tier_rows.get("FUZZY", 0),
         ),
     )
 
@@ -365,6 +389,8 @@ async def get_exceptions(
             ai_diagnosis=exc.ai_diagnosis,
             recommended_action=exc.recommended_action,
             status=exc.status,
+            entity_name=rec.normalized_entity_name or rec.raw_entity_name,
+            drafted_journal_entry=getattr(exc, "drafted_journal_entry", None),
         )
         for exc, rec in rows_sorted
     ]
